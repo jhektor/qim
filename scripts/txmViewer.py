@@ -13,22 +13,29 @@ def read_txm(file, slices=None):
 
 
 def slice_viewer(data, metadata=None, **kwargs):
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3)
     plt.subplots_adjust(left=0.25, bottom=0.25)
-    imxy = ax1.imshow(data[0])
+    # plot images
+    imxy = ax1.imshow(data[data.shape[0] // 2])
     imxz = ax2.imshow(data[:, data.shape[1] // 2, :])
     imyz = ax3.imshow(data[:, :, data.shape[2] // 2])
     ax1.set_title('Top view')
     ax2.set_title('Side view')
     ax3.set_title('Front view')
+
     for ax, color in zip([ax1, ax2, ax3], ['black', 'blue', 'red']):
         plt.setp(ax.spines.values(), color=color)
+    # plot histograms
+    ax4.hist(data[data.shape[0] // 2].flatten())
+    ax5.hist(data[:, data.shape[1] // 2, :].flatten())
+    ax6.hist(data[:, :, data.shape[2] // 2].flatten())
+
     # set up slider
     # ax.margins(x=0)
     axcolor = 'lightgoldenrodyellow'
-    axslice_xy = plt.axes([0.25, 0.2, 0.65, 0.03], facecolor=axcolor)
-    axslice_xz = plt.axes([0.25, 0.15, 0.65, 0.03], facecolor=axcolor)
-    axslice_yz = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor=axcolor)
+    axslice_xy = plt.axes([0.25, 0.15, 0.65, 0.03], facecolor=axcolor)
+    axslice_xz = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor=axcolor)
+    axslice_yz = plt.axes([0.25, 0.05, 0.65, 0.03], facecolor=axcolor)
     sslice_xy = Slider(axslice_xy, 'Slice top', 0, data.shape[0] - 1, valinit=data.shape[0] // 2, valstep=1)
     sslice_xz = Slider(axslice_xz, 'Slice side', 0, data.shape[1] - 1, valinit=data.shape[1] // 2, valstep=1)
     sslice_yz = Slider(axslice_yz, 'Slice front', 0, data.shape[2] - 1, valinit=data.shape[2] // 2, valstep=1)
@@ -60,6 +67,15 @@ def slice_viewer(data, metadata=None, **kwargs):
         imxy.set_data(data[sxy])
         imxz.set_data(data[:, sxz, :])
         imyz.set_data(data[:, :, syz])
+
+        # Updata histograms
+        ax4.clear()
+        ax5.clear()
+        ax6.clear()
+        ax4.hist(data[sxy].flatten())
+        ax5.hist(data[:, sxz, :].flatten())
+        ax6.hist(data[:, :, syz].flatten())
+
         clear_lines()
         draw_lines(sxy, sxz, syz)
         fig.canvas.draw_idle()
@@ -81,7 +97,8 @@ if __name__ == '__main__':
                 ''')
     )
     parser.add_argument(
-        'file', type=str, help='path to txm file'
+        '-f', '--file', type=str, help='path to txm file',
+        default='/home/hektor/Downloads/granges_treated_60kV_le3_1100nm_recon006.txm'
     )
     args = parser.parse_args()
 
