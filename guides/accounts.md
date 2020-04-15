@@ -34,5 +34,7 @@ You should get an email notice once this is done.
 ## LUNARC account
 When you have been added to a project you can request LUNARC account in the SUPR portal.
 This is done under **Accounts -> Account Requests -> Request LUNARC account**.
-The username is typically formed from the three first letters of your first and last names, e.g. Johan Hektor will be johhek.
+The username is typically formed from the three first letters of your first and last names, but you can also ask for a different username.
 Once your request is handled you will receive an email with instructions on how to get your initial password.
+
+To be able to log in to the LUNARC systems you'll need to set up the Pocket Pass authenticator app on your phone by following [this](https://lunarc-documentation.readthedocs.io/en/latest/authenticator_howto/) guide. Once this is done you should be able to connect to the Aurora HPC desktop by following [this](https://lunarc-documentation.readthedocs.io/en/latest/using_hpc_desktop/) guide.
