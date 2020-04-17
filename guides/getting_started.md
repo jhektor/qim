@@ -1,5 +1,24 @@
 # Getting started with image analysis on LUNARC
 ## Cloning the git repository
+The code developed in the QIM project is hosted on GitHub [here](https://github.com/jhektor/qim).
+To get the code you can either download a snapshot of the repository, or clone it.
+To clone the repository run
+```
+git clone https://github.com/jhektor/qim.git
+```
+in a terminal.
+This will create a local copy of the repository in a folder called qim in the current directory.
+To sync your local copy with the GitHub repository run
+```
+git pull
+```
+inside the qim directory.
+If you have modified any files in your local repository the `git pull` command will likely give a bunch of error messages.
+A bette approach in case you want to modify the code is to fork the GitHub repository.
+To set-up the forked repository you can follow [this](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) tutorial.
+If you have improved on the code or implemented a new feature you are very welcome to create a pull request to add your code to the qim repository.
+You can read about how to do that [here](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork).
+
 ## Python environments
 ### A short guide to Conda
 We use Conda for managing the python environments used for different python-based software on LUNARC.
@@ -64,3 +83,13 @@ source activate qim
 ```
 
 #### Tomopy
+[Tomopy](https://tomopy.readthedocs.io/en/latest/) is an open-source Python package for reconstruction of tomographic data from, mainly, synchrotrons.
+The Python environment for Tomopy is created by running
+```
+conda env create -f envs/tomopy_env.yml
+```
+and activate by
+```
+module load anaconda3
+source activate tomopy
+```
