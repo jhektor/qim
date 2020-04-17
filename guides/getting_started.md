@@ -50,6 +50,28 @@ If you have improved on the code or implemented a new feature you are very welco
 You can read about how to do that [here](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork).
 
 ### Python environments
+#### Available python environments
+
+##### QIM
+This is the standard environment for the code developed in the QIM project. It contains the standard anaconda3 packages as well as jupyterlab (for running jupyter notebooks), dxchange (for reading data), and scikit-image (for image processing). This environment is installed by running
+```
+conda env create -f envs/qim_env.yml
+```
+from the qim directory and is activated by
+```
+module load anaconda3
+source activate qim
+```
+##### Tomopy
+Tomopy is an open-source Python package for reconstruction of tomographic data from, mainly, synchrotrons. The Python environment for Tomopy is created by running
+```
+conda env create -f envs/tomopy_env.yml
+```
+and activate by
+```
+module load anaconda3
+source activate tomopy
+```
 
 #### A short guide to Conda
 We use Conda for managing the python environments used for different python-based software on LUNARC.
