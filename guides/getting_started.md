@@ -23,6 +23,17 @@ Activate an existing environment
 module load anaconda3
 source activate NAME
 ```
+### Running code
+Python scripts
+```
+python script.py arguments -keywords
+```
+Jupyter notebooks
+```
+jupyter lab notebook.ipynb
+```
+open the link printed in the terminal with a browser (e.g. Firefox) to access the notebook.
+
 ### Transfer data from your local computer
 ```
 scp file your_username@aurora.lunarc.lu.se:/home/your_username/
@@ -61,6 +72,12 @@ from the qim directory and is activated by
 ```
 module load anaconda3
 source activate qim
+```
+To get jupyterlab to show interactive plots run these commands
+```
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
+jupyter labextension install jupyter-matplotlib
+jupyter nbextension enable --py widgetsnbextension
 ```
 ##### Tomopy
 Tomopy is an open-source Python package for reconstruction of tomographic data from, mainly, synchrotrons. The Python environment for Tomopy is created by running
