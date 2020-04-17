@@ -93,3 +93,12 @@ and activate by
 module load anaconda3
 source activate tomopy
 ```
+
+## Transferring data to LUNARC
+At the moment the most convenient way to transfer data to and from LUNARC is to use ´scp´ in a terminal.
+To transfer a file from your local computer to your `/home` directory on Aurora the syntax is
+```
+scp file your_username@aurora.lunarc.lu.se:/home/your_username/
+```
+You'll then need to input your password and a Pocket Pass OTP in the terminal.
+You can find more examples on how to use scp [here](http://www.hypexr.org/linux_scp_help.php).
