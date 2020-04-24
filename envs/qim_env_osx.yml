@@ -1,0 +1,18 @@
+name: qim
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - dxchange
+  - dxfile
+  - ipykernel
+  - ipympl
+  - ipython
+  - ipython_genutils
+  - ipywidgets
+  - jupyterlab
+  - jupyterlab_server
+  - matplotlib
+  - nodejs
+  - pip=
+  - scikit-image
