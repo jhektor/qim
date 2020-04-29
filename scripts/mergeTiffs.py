@@ -5,11 +5,11 @@ import dxchange.reader as dxreader
 import dxchange.writer as dxwriter
 import numpy as np
 
-def merge_tiffs(args):
+def merge_tiffs(fname,output,ind):
     print('Reading data')
-    data = dxreader.read_tiff_stack(args.fname, args.ind)
-    print('Saving merged data to {}'.format(args.output))
-    dxwriter.write_tiff(data,fname=args.output)
+    data = dxreader.read_tiff_stack(fname, ind)
+    print('Saving merged data to {}'.format(output))
+    dxwriter.write_tiff(data,fname=output)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -38,6 +38,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.ind = np.arange(args.first,args.last+1,args.step)
 
-    merge_tiffs(args)
+    merge_tiffs(args.fname,args.output,args.ind)
     
     
