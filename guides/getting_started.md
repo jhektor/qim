@@ -16,6 +16,7 @@ git pull
 ### Activate a python environment
 Create one of the qim environments
 ```
+module load anaconda3
 conda env create -f envs/CONFIG.yml
 ```
 Activate an existing environment
@@ -66,6 +67,7 @@ You can read about how to do that [here](https://help.github.com/en/github/colla
 ##### QIM
 This is the standard environment for the code developed in the QIM project. It contains the standard anaconda3 packages as well as jupyterlab (for running jupyter notebooks), dxchange (for reading data), and scikit-image (for image processing). This environment is installed by running
 ```
+module load anaconda3
 conda env create -f envs/qim_env.yml
 ```
 from the qim directory and is activated by
