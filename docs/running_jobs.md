@@ -1,3 +1,8 @@
+---
+authors:
+    - Johan Hektor
+date: 2020-05-05
+---
 # Running jobs on Aurora
 This is a short guide on how to use the job submission system on Aurora.
 A more detailed explanation can be found [here](https://lunarc-documentation.readthedocs.io/en/latest/batch_system/).
@@ -92,13 +97,14 @@ It is advisable to start the interactive session from a shell without any module
 
 ## Connecting to Jupyter notebooks running on compute nodes
 To be able to connect to a Jupyter notebook which is running on a compute node the following steps are needed
-1. Generate a Jupyter configuration file by running
+
+* Generate a Jupyter configuration file by running
 ```
 jupyter notebook --generate-config
 ```
 This should create a file called ```jupyter_notebook_config.py``` in ```/home/your_username/.jupyter```.
 
-2. Open the ```jupyter_notebook_config.py``` file and change the line ```c.NotebookApp.allow_origin = ''``` to ```c.NotebookApp.allow_origin = '*'``` and the line ```c.NotebookApp.ip = 'localhost'``` to ```c.NotebookApp.ip = '0.0.0.0'```
+* Open the ```jupyter_notebook_config.py``` file and change the line ```c.NotebookApp.allow_origin = ''``` to ```c.NotebookApp.allow_origin = '*'``` and the line ```c.NotebookApp.ip = 'localhost'``` to ```c.NotebookApp.ip = '0.0.0.0'```
 
 You'll only need to do the steps above once.
 When the notebook starts it should print a link to the notebook which you can open in a browser to connect.

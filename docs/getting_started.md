@@ -1,3 +1,8 @@
+---
+authors:
+    - Johan Hektor
+date: 2020-05-05
+---
 # Getting started with image analysis on LUNARC
 ## The essentials
 This is a very quick guide to getting started with the LUNARC system.

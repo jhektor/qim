@@ -1,3 +1,8 @@
+---
+authors:
+    - Johan Hektor
+date: 2020-05-05
+---
 # Setting up accounts for access to LUNARC resources
 ## SNIC account
 Access to LUNARC resources, e.g. the Aurora cluster, is administered by [SNIC](https://snic.se).

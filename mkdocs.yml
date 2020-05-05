@@ -1,0 +1,12 @@
+site_name: QIM@LU
+nav:
+  - Home: 'index.md'
+  - LUNARC guides:
+    - accounts.md
+    - getting_started.md
+    - running_jobs.md
+theme: readthedocs
+markdown_extensions:
+    - toc:
+        baselevel: 1
+    - meta
