@@ -134,3 +134,4 @@ dmypy.json
 # no pdfs
 .pdf
 *.profraw
+.DS_Store
