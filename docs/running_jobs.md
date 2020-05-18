@@ -104,8 +104,8 @@ jupyter notebook --generate-config
 ```
 This should create a file called ```jupyter_notebook_config.py``` in ```/home/your_username/.jupyter```.
 
-* Open the ```jupyter_notebook_config.py``` file and change the line ```c.NotebookApp.allow_origin = ''``` to ```c.NotebookApp.allow_origin = '*'``` and the line ```c.NotebookApp.ip = 'localhost'``` to ```c.NotebookApp.ip = '0.0.0.0'```
-
+* Open the ```jupyter_notebook_config.py``` file and change the line ```#c.NotebookApp.allow_origin = ''``` to ```c.NotebookApp.allow_origin = '*'``` and the line ```#c.NotebookApp.ip = 'localhost'``` to ```c.NotebookApp.ip = '0.0.0.0'```
+Make sure that the lines are uncommented (i.e. does not start with '''#''').
 You'll only need to do the steps above once.
 When the notebook starts it should print a link to the notebook which you can open in a browser to connect.
 If you do not run an interactive session this link will be printed to the ```.out``` file of the job.
