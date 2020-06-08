@@ -1,5 +1,6 @@
 import scipy.optimize as opt
 import skimage.feature as skf
+from skimage import filters
 import random
 import numpy as np 
 import qim.tools as qim
@@ -42,7 +43,7 @@ def make_dual_histogram(xdata,ydata,nbins):
 
     return H, xcen, ycen
 
-def setup_markers(H, xcen, ycen, markers=None, h=None, min_distance=20):
+def setup_markers(H, xcen, ycen, markers=None, h=None, min_distance=None):
     """
     Creates a list of makers used as initial positions of the fitted gaussians. 
     A manual list of markers can be passed (as [[x1,y1],...,[xn,yn]]). If not the location of the peaks will be guessed from the histogram
@@ -53,8 +54,10 @@ def setup_markers(H, xcen, ycen, markers=None, h=None, min_distance=20):
     Keyword arguments:
         markers: List of marker coordinates [[x1, y1],...,[xn,yn]], default=None means automatic identification of the peaks 
         h: Threshold for h-dome filter in auto peaksearch
-        min_distance: minumim distance between peaks found in auto peaksearch
+        min_distance: minumim distance between peaks found in auto peaksearch, default 8% of the size of H
     """
+    if not min_distance:
+        min_distance = H.shape[0]//12
     if markers:
         ml = []
         for m in markers:
@@ -66,9 +69,11 @@ def setup_markers(H, xcen, ycen, markers=None, h=None, min_distance=20):
         if not h:
             h = np.mean(H)
         h_dome = qim.h_dome_filter(H, h)
+        h_dome = filters.median(h_dome)
         ml_auto = skf.peak_local_max(h_dome, min_distance=min_distance) #gives results in row,col
         ml = [[i[1],i[0]] for i in ml_auto]
-
+        #remove small maximas
+        ml = [m for m in ml if H[m[1],m[0]]>10]
     return ml
 
 def fit_gaussians(H,ml,xcen,ycen):
@@ -101,7 +106,15 @@ def fit_gaussians(H,ml,xcen,ycen):
         try:
             popt,pcov = opt.curve_fit(qim.gaussian2D,xy,Hc.ravel(),p0=init)
             print('Fitted parameters [{:.3f} {:.3f} {:.1f} {:.1f} {:.1f} {:1f} {:.1f}]'.format(*popt))
-            opts.append(popt)
+            #Check if it is close to something already fitted
+            if len(opts)>0:
+                dist = [np.sqrt((popt[0]-op[0])**2+(popt[1]-op[1])**2) for op in opts]
+                if np.min(dist)>1000:
+                    opts.append(popt)
+                else:
+                    print('This Gaussian is too close to something already fitted, d={:.3f}. Skipping.'.format(np.min(dist)))
+            else:
+                opts.append(popt)
         except RuntimeError:
             print('Failed to fit this peak. Moving to the next.')
             continue
@@ -184,7 +197,8 @@ def map_to_volume(xdata, ydata, xcen, ycen, phasediagram, slicenr = None):
     for i, (xslice,yslice) in enumerate(zip(xdata,ydata)):
         if slicenr and i is not slicenr:
             continue
-        print('Labelling slice {:d} of {:d}'.format(i,xdata.shape[0]))
+        if i%10 == 0:
+            print('Labelling slice {:d} of {:d}'.format(i,xdata.shape[0]))
         #find the bins of each pixel in the slices
         bx = np.digitize(xslice,xcen)
         by = np.digitize(yslice,ycen)
