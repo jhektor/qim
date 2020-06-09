@@ -2,16 +2,13 @@
 import argparse
 import textwrap
 
-import dxchange.reader as dxreader
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.widgets import Slider
 
-
-def read_txm(file, slices=None):
-    data, meta = dxreader.read_txrm(file, slice_range=slices)
-    return data, meta
-
+import sys
+sys.path.insert(0, '/home/hektor/scripts')
+from qim.inout import read_txm
 
 def slice_viewer(data, metadata=None, **kwargs):
     fig = plt.figure(figsize=(10, 8))

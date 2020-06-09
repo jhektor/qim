@@ -1,15 +1,11 @@
 import argparse
 import textwrap
 
-import dxchange.reader as dxreader
-import dxchange.writer as dxwriter
 import numpy as np
 
-def merge_tiffs(fname,output,ind):
-    print('Reading data')
-    data = dxreader.read_tiff_stack(fname, ind)
-    print('Saving merged data to {}'.format(output))
-    dxwriter.write_tiff(data,fname=output)
+import sys
+sys.path.insert(0, '/home/hektor/scripts')
+from qim.inout import read_txm
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
