@@ -4,8 +4,8 @@ import textwrap
 import numpy as np
 
 import sys
-sys.path.insert(0, '/home/hektor/scripts')
-from qim.inout import read_txm
+sys.path.insert(0, '/lunarc/nobackup/projects/qim')
+from qim.inout import merge_tiffs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

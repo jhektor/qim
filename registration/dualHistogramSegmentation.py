@@ -24,7 +24,7 @@ def plot_dual_histogram(H,xcen,ycen,markers=None,fits=None,xlabel=None,ylabel=No
             plt.contour(X,Y,f.reshape(H.shape),colors='r')
     plt.show()
 
-def make_dual_histogram(xdata,ydata,nbins):
+def make_dual_histogram(xdata,ydata,nbins,**kwargs):
     """
     Creates a dual histogram. Wrapper of numpy.histogram2d
     Input:
@@ -37,7 +37,7 @@ def make_dual_histogram(xdata,ydata,nbins):
         xcen: Centers of bins on x axis
         ycen: Centers of bins on y axis
     """
-    H,yedges,xedges = np.histogram2d(ydata.flatten(),xdata.flatten(),bins=nbins)
+    H,yedges,xedges = np.histogram2d(ydata.flatten(),xdata.flatten(),bins=nbins,**kwargs)
     xcen = (xedges[1:] + xedges[:-1])/2
     ycen = (yedges[1:] + yedges[:-1])/2
 
@@ -76,7 +76,7 @@ def setup_markers(H, xcen, ycen, markers=None, h=None, min_distance=None):
         ml = [m for m in ml if H[m[1],m[0]]>10]
     return ml
 
-def fit_gaussians(H,ml,xcen,ycen):
+def fit_gaussians(H,ml,xcen,ycen,fitdist=20,maxdist=1000):
     """ 
     Fit 2D gaussians to the dual histogram.
     Input:
@@ -84,6 +84,9 @@ def fit_gaussians(H,ml,xcen,ycen):
         ml: marker locations
         xcen: centers of bins on x-axis
         ycen: centers of bins on y-axis
+    Keyword arguments:
+        fitdist: Radius of circle to fit data within, default = 20
+        maxdist: Largest allowed distance between a point and a Gaussian, default = 1000
     Output:
         opts: list of fitted parameters [xc,yc,sigma_x,sigma_y,theta,amplitude,offset]
     """
@@ -91,7 +94,6 @@ def fit_gaussians(H,ml,xcen,ycen):
     xy = np.vstack((X.ravel(),Y.ravel())) #to comply with curve_fit syntax
 
     opts = []
-    fitdist = H.shape[0]//10 #radius of circle to fit data within
     for m in ml:
         x0,y0 =xcen[m[0]],ycen[m[1]] 
         print('Trying to fit peak at ({:.1f}, {:.1f})'.format(x0,y0))
@@ -109,16 +111,17 @@ def fit_gaussians(H,ml,xcen,ycen):
             #Check if it is close to something already fitted
             if len(opts)>0:
                 dist = [np.sqrt((popt[0]-op[0])**2+(popt[1]-op[1])**2) for op in opts]
-                if np.min(dist)>1000:
+                if np.min(dist)>maxdist:
                     opts.append(popt)
+                    print('Fitted {:d} peaks'.format(len(opts)))
                 else:
                     print('This Gaussian is too close to something already fitted, d={:.3f}. Skipping.'.format(np.min(dist)))
             else:
                 opts.append(popt)
+                print('Fitted {:d} peaks'.format(len(opts)))
         except RuntimeError:
             print('Failed to fit this peak. Moving to the next.')
             continue
-        print('Fitted {:d} peaks'.format(len(opts)))
     return opts
 
 def voxel_coverage(H,xcen,ycen,opts,coverage=0.99):
@@ -195,8 +198,9 @@ def map_to_volume(xdata, ydata, xcen, ycen, phasediagram, slicenr = None):
     else:
         labels = np.zeros(xdata.shape)
     for i, (xslice,yslice) in enumerate(zip(xdata,ydata)):
-        if slicenr and i is not slicenr:
-            continue
+        if slicenr:
+            if i != slicenr:
+                continue
         if i%10 == 0:
             print('Labelling slice {:d} of {:d}'.format(i,xdata.shape[0]))
         #find the bins of each pixel in the slices
@@ -204,7 +208,7 @@ def map_to_volume(xdata, ydata, xcen, ycen, phasediagram, slicenr = None):
         by = np.digitize(yslice,ycen)
         for iy in range(xslice.shape[0]):
             for ix in range(xslice.shape[1]):
-                if xdata[i,iy,ix] > 0: #this will not work if the background is not 0
+                if 1:#xdata[i,iy,ix] > 0: #this will not work if the background is not 0
                     if slicenr:
                         labels[iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]-1]
                     else:

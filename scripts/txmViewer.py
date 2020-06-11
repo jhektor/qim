@@ -1,13 +1,14 @@
-# import dxchange
 import argparse
 import textwrap
 
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.widgets import Slider
+import matplotlib
+matplotlib.use('Tkagg')
 
 import sys
-sys.path.insert(0, '/home/hektor/scripts')
+sys.path.insert(0, '/lunarc/nobackup/projects/qim/')
 from qim.inout import read_txm
 
 def slice_viewer(data, metadata=None, **kwargs):
