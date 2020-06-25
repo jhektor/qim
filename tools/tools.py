@@ -4,6 +4,8 @@ This module contains various helper functions
 import numpy as np
 from skimage.morphology import reconstruction
 
+def find_bin_centers(edges):
+    return (edges[1:] + edges[:-1])/2
 
 def h_dome_filter(volume,h):
     seed = volume-h
