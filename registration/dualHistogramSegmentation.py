@@ -5,6 +5,15 @@ import random
 import numpy as np 
 import qim.tools as qim
 import matplotlib.pyplot as plt
+import multiprocessing as mp
+
+data = None
+ydata = None 
+xedges = None
+yedges = None
+phasediagram = None
+xcen = None
+ycen = None
 
 def plot_dual_histogram(H,xedges,yedges,markers=None,fits=None,xlabel=None,ylabel=None, **kwargs):
     #add one element to ycen and xcen to fix plotting issue in pcolorlabel
@@ -205,7 +214,7 @@ def phase_diagram(H,xedges,yedges,opts,sigma=None,coverage=0.99):
     phasediagram = _phase_diagram(H,xcen,ycen,opts,sigma)
     return phasediagram
 
-def map_to_volume(xdata, ydata, xedges, yedges, phasediagram, slicenr = None):
+def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr = None, nprocs=1):
     """
     Assign each voxel in the volume to a label in the phase diagram.
     Inputs:
@@ -219,26 +228,50 @@ def map_to_volume(xdata, ydata, xedges, yedges, phasediagram, slicenr = None):
     Outputs:
         labels: labelled volume
     """
+    global xdata
+    global ydata
+    global xedges
+    global yedges
+    global phasediagram
+    global xcen
+    global ycen
+    xdata = xdatain
+    ydata = ydatain
+    xedges = xedgesin
+    yedges = yedgesin
+    phasediagram = phasediagramin
+
     xcen = qim.find_bin_centers(xedges)
     ycen = qim.find_bin_centers(yedges)
     if slicenr:
         labels = np.zeros((xdata.shape[1],xdata.shape[2]))
+        xs = xdata[slicenr]
+        ys = ydata[slicenr]
+        bx = np.digitize(xs,xcen)
+        by = np.digitize(ys,ycen)   
+        for iy in range(xs.shape[0]):
+            for ix in range(xs.shape[1]):
+                labels[iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]-1]     
     else:
-        labels = np.zeros(xdata.shape)
-    for i, (xslice,yslice) in enumerate(zip(xdata,ydata)):
-        if slicenr:
-            if i != slicenr:
-                continue
-        if i%10 == 0:
-            print('Labelling slice {:d} of {:d}'.format(i,xdata.shape[0]))
+        #labels = np.zeros(xdata.shape)
+        a=list(range(0,xdata.shape[0]+xdata.shape[0]//nprocs, xdata.shape[0]//nprocs))
+        arguments = [[a[i],a[i+1]] for i in range(len(a)-1)]
+        print('Setting up pool with {:d} processors'.format(nprocs))
+        with mp.Pool( nprocs ) as p:
+            labels = p.map( _map_parallel, arguments)
+        labels=np.concatenate(labels)
+    return labels
+
+def _map_parallel(arguments):
+    xdata_sliced = xdata[arguments[0]:arguments[1]]
+    ydata_sliced = ydata[arguments[0]:arguments[1]]  
+    labels = np.zeros(xdata_sliced.shape)
+    for i, (xslice,yslice) in enumerate(zip(xdata_sliced,ydata_sliced)):
         #find the bins of each pixel in the slices
         bx = np.digitize(xslice,xcen)
         by = np.digitize(yslice,ycen)
         for iy in range(xslice.shape[0]):
             for ix in range(xslice.shape[1]):
-                if 1:#xdata[i,iy,ix] > 0: #this will not work if the background is not 0
-                    if slicenr:
-                        labels[iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]-1]
-                    else:
-                        labels[i,iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]-1]
+                labels[i,iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]-1]
     return labels
+
