@@ -256,30 +256,16 @@ def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr 
         #labels = np.zeros(xdata.shape)
         a=list(range(0,xdata.shape[0]+xdata.shape[0]//nprocs, xdata.shape[0]//nprocs))
         arguments = [[a[i],a[i+1]] for i in range(len(a)-1)]
+        print('Setting up pool with {:d} processors'.format(nprocs))
         with mp.Pool( nprocs ) as p:
             labels = p.map( _map_parallel, arguments)
-    # for i, (xslice,yslice) in enumerate(zip(xdata,ydata)):
-    #     if slicenr:
-    #         if i != slicenr:
-    #             continue
-    #     if i%10 == 0:
-    #         print('Labelling slice {:d} of {:d}'.format(i,xdata.shape[0]))
-    #     #find the bins of each pixel in the slices
-    #     bx = np.digitize(xslice,xcen)
-    #     by = np.digitize(yslice,ycen)
-    #     for iy in range(xslice.shape[0]):
-    #         for ix in range(xslice.shape[1]):
-    #             if 1:#xdata[i,iy,ix] > 0: #this will not work if the background is not 0
-    #                 if slicenr:
-    #                     labels[iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]-1]
-    #                 else:
-    #                     labels[i,iy,ix] = phasediagram[by[iy,ix]-1,bx[iy,ix]- 1]
+        labels=np.concatenate(labels)
     return labels
 
 def _map_parallel(arguments):
     xdata_sliced = xdata[arguments[0]:arguments[1]]
     ydata_sliced = ydata[arguments[0]:arguments[1]]  
-    labels = np.zeros(xdata.shape)
+    labels = np.zeros(xdata_sliced.shape)
     for i, (xslice,yslice) in enumerate(zip(xdata_sliced,ydata_sliced)):
         #find the bins of each pixel in the slices
         bx = np.digitize(xslice,xcen)
