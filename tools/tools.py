@@ -3,6 +3,7 @@ This module contains various helper functions
 """
 import numpy as np
 from skimage.morphology import reconstruction
+import matplotlib
 
 def find_bin_centers(edges):
     return (edges[1:] + edges[:-1])/2
@@ -29,3 +30,17 @@ def distance(x,y,opt): #Mahalanobis distance
     b = -np.sin(2*th)/(4*sx**2)+np.sin(2*th)/(4*sy**2)
     c = np.sin(th)*np.sin(th)/(2*sx**2)+np.cos(th)*np.cos(th)/(2*sy**2)
     return np.sqrt((a * (x - x0)**2 + 2.0 * b * (x - x0) * (y - y0) + c * (y - y0)**2))
+
+def random_cmap(ncolors=256,startmap=None):
+    """ Generate a random colormap with a specified number of colors.
+        startmap is either None for random rgb values or a plt.cm object
+        (e.g. plt.cm.jet) to shuffle that colormap.
+        Taken from https://gist.github.com/jgomezdans/402500
+    """
+    if not startmap: #random rgb values
+        return matplotlib.colors.ListedColormap(np.random.rand(ncolors,3))
+    else:
+        vals = np.linspace(0,1,ncolors)
+        np.random.shuffle(vals)
+        return matplotlib.colors.ListedColormap(startmap(vals))
+
