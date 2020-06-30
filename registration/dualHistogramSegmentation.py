@@ -3,7 +3,7 @@ import skimage.feature as skf
 from skimage import filters
 import random
 import numpy as np 
-import qim.tools as qim
+import qim.tools as tools
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 
@@ -33,12 +33,12 @@ def plot_dual_histogram(H,xedges,yedges,markers=None,fits=None,xlabel=None,ylabe
             plt.plot(X[m[1],m[0]],Y[m[1],m[0]],'ro')
     if fits:
         #this needs the bin centers
-        xc = qim.find_bin_centers(xedges)
-        yc = qim.find_bin_centers(yedges)
+        xc = tools.find_bin_centers(xedges)
+        yc = tools.find_bin_centers(yedges)
         Y,X = np.meshgrid(yc,xc,indexing='ij')
         xy = np.vstack((X.ravel(),Y.ravel())) #to comply with curve_fit syntax
         for p in fits:
-            f = qim.gaussian2D(xy,*p)
+            f = tools.gaussian2D(xy,*p)
             plt.contour(X,Y,f.reshape(H.shape),colors='r')
     plt.show()
 
@@ -74,8 +74,8 @@ def setup_markers(H, xedges, yedges, markers=None, h=None, min_distance=None):
         h: Threshold for h-dome filter in auto peaksearch
         min_distance: minumim distance between peaks found in auto peaksearch, default 8% of the size of H
     """
-    xcen = qim.find_bin_centers(xedges)
-    ycen = qim.find_bin_centers(yedges)
+    xcen = tools.find_bin_centers(xedges)
+    ycen = tools.find_bin_centers(yedges)
     if not min_distance:
         min_distance = H.shape[0]//12
     if markers:
@@ -88,7 +88,7 @@ def setup_markers(H, xedges, yedges, markers=None, h=None, min_distance=None):
     else: #Automatic peak identification
         if not h:
             h = np.mean(H)
-        h_dome = qim.h_dome_filter(H, h)
+        h_dome = tools.h_dome_filter(H, h)
         h_dome = filters.median(h_dome)
         ml_auto = skf.peak_local_max(h_dome, min_distance=min_distance) #gives results in row,col
         ml = [[i[1],i[0]] for i in ml_auto]
@@ -96,7 +96,7 @@ def setup_markers(H, xedges, yedges, markers=None, h=None, min_distance=None):
         ml = [m for m in ml if H[m[1],m[0]]>10]
     return ml
 
-def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=1000):
+def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=10):
     """ 
     Fit 2D gaussians to the dual histogram.
     Input:
@@ -106,12 +106,12 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=1000):
         yedges: centers of bins on y-axis
     Keyword arguments:
         fitdist: Radius of circle to fit data within, default = 20
-        maxdist: Largest allowed distance between a point and a Gaussian, default = 1000
+        mindist: Smallest allowed distance between two fitted Gaussians, default = 10
     Output:
         opts: list of fitted parameters [xc,yc,sigma_x,sigma_y,theta,amplitude,offset]
     """
-    xcen = qim.find_bin_centers(xedges)
-    ycen = qim.find_bin_centers(yedges)
+    xcen = tools.find_bin_centers(xedges)
+    ycen = tools.find_bin_centers(yedges)
 
     Y,X = np.meshgrid(ycen,xcen,indexing='ij') #coordinates in dual histogram
     xy = np.vstack((X.ravel(),Y.ravel())) #to comply with curve_fit syntax
@@ -137,12 +137,12 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=1000):
         init = [x0,y0,100,100,0,H[m[1],m[0]],0]
         print('Initial guess: [{:.3f} {:.3f} {:.1f} {:.1f} {:.1f} {:1f} {:.1f}]'.format(*init))
         try:
-            popt,pcov = opt.curve_fit(qim.gaussian2D,xy,Hc.ravel(),p0=init)
+            popt,pcov = opt.curve_fit(tools.gaussian2D,xy,Hc.ravel(),p0=init)
             print('Fitted parameters [{:.3f} {:.3f} {:.1f} {:.1f} {:.1f} {:1f} {:.1f}]'.format(*popt))
             #Check if it is close to something already fitted
             if len(opts)>0:
                 dist = [np.sqrt((popt[0]-op[0])**2+(popt[1]-op[1])**2) for op in opts]
-                if np.min(dist)>maxdist:
+                if np.min(dist)>mindist:
                     opts.append(popt)
                     print('Fitted {:d} peaks'.format(len(opts)))
                 else:
@@ -168,8 +168,8 @@ def voxel_coverage(H,xedges,yedges,opts,coverage=0.99):
     Output:
         sigma: minimal distance threshold
     """
-    xcen = qim.find_bin_centers(xedges)
-    ycen = qim.find_bin_centers(yedges)
+    xcen = tools.find_bin_centers(xedges)
+    ycen = tools.find_bin_centers(yedges)
     phase = np.zeros(H.shape,dtype=int)
     vxlcov = 0
     sigma = 1
@@ -186,7 +186,7 @@ def _phase_diagram(H,xcen,ycen,opts,sigma):
     for ix,x in enumerate(xcen):
         for iy,y in enumerate(ycen):
             if H[iy,ix]>0:
-                distances = [qim.distance(x,y,o) for o in opts]
+                distances = [tools.distance(x,y,o) for o in opts]
                 i = np.argmin(distances)
                 distanceMin = distances[i]
                 if distanceMin < sigma: 
@@ -207,8 +207,8 @@ def phase_diagram(H,xedges,yedges,opts,sigma=None,coverage=0.99):
     Output:
         phasediagram: labelled dual histogram
     """
-    xcen = qim.find_bin_centers(xedges)
-    ycen = qim.find_bin_centers(yedges)
+    xcen = tools.find_bin_centers(xedges)
+    ycen = tools.find_bin_centers(yedges)
     if not sigma:
         sigma = voxel_coverage(H,xcen,ycen,opts,coverage=coverage)
     phasediagram = _phase_diagram(H,xcen,ycen,opts,sigma)
@@ -241,8 +241,8 @@ def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr 
     yedges = yedgesin
     phasediagram = phasediagramin
 
-    xcen = qim.find_bin_centers(xedges)
-    ycen = qim.find_bin_centers(yedges)
+    xcen = tools.find_bin_centers(xedges)
+    ycen = tools.find_bin_centers(yedges)
     if slicenr:
         labels = np.zeros((xdata.shape[1],xdata.shape[2]))
         xs = xdata[slicenr]
