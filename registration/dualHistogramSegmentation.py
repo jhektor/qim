@@ -96,7 +96,7 @@ def setup_markers(H, xedges, yedges, markers=None, h=None, min_distance=None):
         ml = [m for m in ml if H[m[1],m[0]]>10]
     return ml
 
-def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=10):
+def fit_gaussians(H,ml,xedges,yedges,fitdist=20,mindist=10):
     """ 
     Fit 2D gaussians to the dual histogram.
     Input:
@@ -105,8 +105,8 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=10):
         xedges: centers of bins on x-axis
         yedges: centers of bins on y-axis
     Keyword arguments:
-        fitdist: Radius of circle to fit data within, default = 20
-        mindist: Smallest allowed distance between two fitted Gaussians, default = 10
+        fitdist: Radius of circle to fit data within. Scalar or list with the same number of elements as markers. default = 20
+        mindist: Smallest allowed distance between two Gaussians, default = 10
     Output:
         opts: list of fitted parameters [xc,yc,sigma_x,sigma_y,theta,amplitude,offset]
     """
@@ -115,16 +115,35 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=10):
 
     Y,X = np.meshgrid(ycen,xcen,indexing='ij') #coordinates in dual histogram
     xy = np.vstack((X.ravel(),Y.ravel())) #to comply with curve_fit syntax
-
     opts = []
-    for m in ml:
+    
+    #Sort the markers to always fit the highest first
+    hv = [H[m[1],m[0]] for m in ml]
+    idx = np.argsort(hv)
+    ml = [ml[i] for i in idx]
+    try:
+        fitdist = [fitdist[i] for i in idx]
+        fitdist.reverse()
+    except: #fitdist wasn't a list
+        pass 
+    for i,m in enumerate(reversed(ml)):
         x0,y0 =xcen[m[0]],ycen[m[1]] 
         print('Trying to fit peak at ({:.1f}, {:.1f})'.format(x0,y0))
+        try:
+            fd = fitdist[i]
+        except: #fitdist wasn't a list
+            fd = fitdist
+        print('Removing everything outside of {:.3f} pixels'.format(fd))
         Hc=H.copy()
+        #subtract already fitted
+        if len(opts)>0:
+            for op in opts:
+                g = tools.gaussian2D(xy,*op)
+                Hc -= g.reshape(Hc.shape)
         for i in range(Hc.shape[0]):
             for j in range(Hc.shape[1]):
                 d = np.sqrt((i-m[1])**2+(j-m[0])**2)
-                if d > fitdist:
+                if d > fd:
                     Hc[i,j] = 0
         #check if marker is on an edge
         if (m[0]==0) or (m[0]==H.shape[0]-1) or (m[1]==0) or (m[1]==H.shape[0]-1):
@@ -134,11 +153,20 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,maxdist=10):
                 Hc[:,m[0]] = H[:,m[0]]
             elif (m[1]==0) or (m[1]==H.shape[0]-1): #bottom/top edges
                 Hc[m[1],:] = H[m[1],:]
-        init = [x0,y0,100,100,0,H[m[1],m[0]],0]
-        print('Initial guess: [{:.3f} {:.3f} {:.1f} {:.1f} {:.1f} {:1f} {:.1f}]'.format(*init))
+                
+        # Find the amplitude and position of highest value
+        idx = np.argmax(Hc)
+        y0i,x0i = np.unravel_index(idx,Hc.shape)
+        x0 = X[y0i,x0i]
+        y0 = Y[y0i,x0i]
+        H0=Hc[y0i,x0i]
+        of = 0 #offset
+        inits = [100,100,0]
+       
         try:
-            popt,pcov = opt.curve_fit(tools.gaussian2D,xy,Hc.ravel(),p0=init)
-            print('Fitted parameters [{:.3f} {:.3f} {:.1f} {:.1f} {:.1f} {:1f} {:.1f}]'.format(*popt))
+            pt,pcov = opt.curve_fit(lambda xy,sx,sy,th: tools.gaussian2D(xy,x0,y0,sx,sy,th,H0,of),xy,Hc.ravel(),p0=inits)
+            popt=[x0,y0,pt[0],pt[1],pt[2],H0,of]
+            print('Fitted parameters [{:.3f} {:.3f} {:.3f} {:.1f} {:.1f} {:1f} {:.1f}]'.format(*popt))
             #Check if it is close to something already fitted
             if len(opts)>0:
                 dist = [np.sqrt((popt[0]-op[0])**2+(popt[1]-op[1])**2) for op in opts]
@@ -177,7 +205,7 @@ def voxel_coverage(H,xedges,yedges,opts,coverage=0.99):
         sigma += 10**int(np.log10(sigma))
         phase = _phase_diagram(H,xcen,ycen,opts,sigma)
 
-        vxlcov = H[phase>0].sum()/(H.sum()-H[0,0]) #subtract the background bin
+        vxlcov = H[phase>0].sum()/(H.sum())#-H[0,0]) #subtract the background bin
         print("Finding full coverage: sigma={}, coverage={}".format(sigma,vxlcov))
     return sigma
 
@@ -213,6 +241,36 @@ def phase_diagram(H,xedges,yedges,opts,sigma=None,coverage=0.99):
         sigma = voxel_coverage(H,xcen,ycen,opts,coverage=coverage)
     phasediagram = _phase_diagram(H,xcen,ycen,opts,sigma)
     return phasediagram
+
+def get_pdfs(xedges,yedges,opts):
+    """
+    Compute the probability densities of the fitted Gaussians
+    """
+    xcen = tools.find_bin_centers(xedges)
+    ycen = tools.find_bin_centers(yedges)
+    #bin size
+    dx = np.diff(xcen)[0] 
+    dy = np.diff(xcen)[1] 
+    
+    Y,X = np.meshgrid(ycen,xcen,indexing='ij') #coordinates in dual histogram
+    xy = np.vstack((X.ravel(),Y.ravel())) #to comply with curve_fit syntax
+    pdfs = np.zeros((len(opts),*X.shape))
+    for i,op in enumerate(opts):
+        sx,sy,th = op[2],op[3],op[4]
+        a = np.cos(th)*np.cos(th)/(2*sx**2)+np.sin(th)*np.sin(th)/(2*sy**2)
+        b = -np.sin(2*th)/(4*sx**2)+np.sin(2*th)/(4*sy**2)
+        c = np.sin(th)*np.sin(th)/(2*sx**2)+np.cos(th)*np.cos(th)/(2*sy**2)
+        Si = np.array([[a,b],[b,c]]) #Inverse covariance matrix
+        S = np.linalg.inv(Si)
+        detS = np.linalg.det(S)
+        mu = np.array([op[0],op[1]])
+        pdf = np.zeros(xy.shape[1])
+        for k,phi in enumerate(xy.T):
+            pdf[k] = 1./(2*np.pi*np.sqrt(detS))*np.exp(-0.5*(np.dot(phi-mu,np.dot(Si,phi-mu))))*dx*dy
+        pdfs[i]=pdf.reshape(X.shape)
+    return pdfs
+
+
 
 def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr = None, nprocs=1):
     """
