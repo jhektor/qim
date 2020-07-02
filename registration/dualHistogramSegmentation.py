@@ -112,7 +112,6 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,mindist=10):
     """
     xcen = tools.find_bin_centers(xedges)
     ycen = tools.find_bin_centers(yedges)
-
     Y,X = np.meshgrid(ycen,xcen,indexing='ij') #coordinates in dual histogram
     xy = np.vstack((X.ravel(),Y.ravel())) #to comply with curve_fit syntax
     opts = []
@@ -136,10 +135,10 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,mindist=10):
         print('Removing everything outside of {:.3f} pixels'.format(fd))
         Hc=H.copy()
         #subtract already fitted
-        if len(opts)>0:
-            for op in opts:
-                g = tools.gaussian2D(xy,*op)
-                Hc -= g.reshape(Hc.shape)
+        # if len(opts)>0:
+        #     for op in opts:
+        #         g = tools.gaussian2D(xy,*op)
+        #         Hc -= g.reshape(Hc.shape)
         for i in range(Hc.shape[0]):
             for j in range(Hc.shape[1]):
                 d = np.sqrt((i-m[1])**2+(j-m[0])**2)
@@ -162,7 +161,9 @@ def fit_gaussians(H,ml,xedges,yedges,fitdist=20,mindist=10):
         H0=Hc[y0i,x0i]
         of = 0 #offset
         inits = [100,100,0]
-       
+
+        # Set nan and inf to 0
+        Hc[~np.isfinite(Hc)]=0
         try:
             pt,pcov = opt.curve_fit(lambda xy,sx,sy,th: tools.gaussian2D(xy,x0,y0,sx,sy,th,H0,of),xy,Hc.ravel(),p0=inits)
             popt=[x0,y0,pt[0],pt[1],pt[2],H0,of]
@@ -272,7 +273,7 @@ def get_pdfs(xedges,yedges,opts):
 
 
 
-def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr = None, nprocs=1):
+def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr = None, slicedir=0,nprocs=1):
     """
     Assign each voxel in the volume to a label in the phase diagram.
     Inputs:
@@ -283,6 +284,7 @@ def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr 
         phasediagram: phasediagram
     Keyword arguments:
         slicenr: if not None label only the slice with this index 
+        slicedir: axis to slice in (0,1,2)
     Outputs:
         labels: labelled volume
     """
@@ -302,9 +304,18 @@ def map_to_volume(xdatain, ydatain, xedgesin, yedgesin, phasediagramin, slicenr 
     xcen = tools.find_bin_centers(xedges)
     ycen = tools.find_bin_centers(yedges)
     if slicenr:
-        labels = np.zeros((xdata.shape[1],xdata.shape[2]))
-        xs = xdata[slicenr]
-        ys = ydata[slicenr]
+        if slicedir == 0:
+            labels = np.zeros((xdata.shape[1],xdata.shape[2]))
+            xs = xdata[slicenr]
+            ys = ydata[slicenr]
+        elif slicedir == 1:
+            labels = np.zeros((xdata.shape[0],xdata.shape[2]))
+            xs = xdata[:,slicenr,:]
+            ys = ydata[:,slicenr,:]
+        elif slicedir == 2:
+            labels = np.zeros((xdata.shape[0],xdata.shape[1]))
+            xs = xdata[:,:,slicenr]
+            ys = ydata[:,:,slicenr]
         bx = np.digitize(xs,xcen)
         by = np.digitize(ys,ycen)   
         for iy in range(xs.shape[0]):
