@@ -3,7 +3,7 @@ import numpy as np
 import tifffile
 import matplotlib.pyplot as plt
 
-def applyRegistration(data1,data2,phi,binning,output, return_data=False, verbose=True):
+def applyRegistration(data1,data2,phi,binning,output=None, return_data=False, verbose=True):
     """
     Applies a registration defined by a spam phi-file to a dataset.
     Input:
@@ -20,19 +20,26 @@ def applyRegistration(data1,data2,phi,binning,output, return_data=False, verbose
     """
     # Parse the phi file
     f = np.genfromtxt(phi, delimiter="\t", names=True)
-    Phi = np.array([[float(f["F11"]), float(f["F12"]), float(f["F13"]), float(f['Zdisp'])],
-                           [float(f["F21"]), float(f["F22"]), float(f["F23"]), float(f['Ydisp'])],
-                           [float(f["F31"]), float(f["F32"]), float(f["F33"]), float(f['Xdisp'])],
-                           [0, 0, 0, 1]])
+    try:
+        Phi = np.array([[float(f["F11"]), float(f["F12"]), float(f["F13"]), float(f['Zdisp'])],
+                            [float(f["F21"]), float(f["F22"]), float(f["F23"]), float(f['Ydisp'])],
+                            [float(f["F31"]), float(f["F32"]), float(f["F33"]), float(f['Xdisp'])],
+                            [0, 0, 0, 1]])
+    except ValueError:
+        Phi = np.array([[float(f["Fzz"]), float(f["Fzy"]), float(f["Fzx"]), float(f['Zdisp'])],
+                            [float(f["Fyz"]), float(f["Fyy"]), float(f["Fyx"]), float(f['Ydisp'])],
+                            [float(f["Fxz"]), float(f["Fxy"]), float(f["Fxx"]), float(f['Xdisp'])],
+                            [0, 0, 0, 1]])
     phibin = int(f["bin"])
     # Correct phi for different binning between the image and the phi file
     Phi[0:3,-1] *= phibin/binning
 
     # Apply phi to data2 image
     d2r = spam.DIC.applyPhi(data2,Phi=Phi)
-    if verbose:
-        print('Saving registered tiff file')
-    tifffile.imwrite(output,data=d2r.astype('uint16'))
+    if output:
+        if verbose:
+            print('Saving registered tiff file')
+        tifffile.imwrite(output,data=d2r.astype('uint16'))
 
     if verbose: #make plots
         n=3
