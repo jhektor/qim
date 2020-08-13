@@ -34,12 +34,34 @@ def applyRegistration(data1,data2,phi,binning,output, return_data=False, verbose
         print('Saving registered tiff file')
     tifffile.imwrite(output,data=d2r.astype('uint16'))
 
-    if verbose: #make a plot
+    if verbose: #make plots
         n=3
         halfslice = data2.shape[2]//2
         cmap='Greys'
         initcheck = spam.DIC.checkerBoard(data1[:,:,halfslice],data2[:,:,halfslice],n=n)
         regcheck = spam.DIC.checkerBoard(data1[:,:,halfslice],d2r[:,:,halfslice],n=n) 
+
+        fig,axes=plt.subplots(1,2,figsize=(16,8),sharex=True, sharey=True)
+        ax = axes.ravel()
+        ax[0].imshow(initcheck, cmap=cmap)
+        ax[0].set_title('Before registration')
+        ax[1].imshow(regcheck, cmap=cmap)
+        ax[1].set_title('After registration')
+        fig.tight_layout()
+
+        initcheck = spam.DIC.checkerBoard(data1[:,halfslice,:],data2[:,halfslice,:],n=n)
+        regcheck = spam.DIC.checkerBoard(data1[:,halfslice,:],d2r[:,halfslice,:],n=n) 
+
+        fig,axes=plt.subplots(1,2,figsize=(16,8),sharex=True, sharey=True)
+        ax = axes.ravel()
+        ax[0].imshow(initcheck, cmap=cmap)
+        ax[0].set_title('Before registration')
+        ax[1].imshow(regcheck, cmap=cmap)
+        ax[1].set_title('After registration')
+        fig.tight_layout()
+
+        initcheck = spam.DIC.checkerBoard(data1[halfslice],data2[halfslice],n=n)
+        regcheck = spam.DIC.checkerBoard(data1[halfslice],d2r[halfslice],n=n) 
 
         fig,axes=plt.subplots(1,2,figsize=(16,8),sharex=True, sharey=True)
         ax = axes.ravel()
